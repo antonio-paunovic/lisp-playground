@@ -190,18 +190,15 @@
           (setf (elt (elt board i ) j) mark)
           (return ))))))
 
-(defun bingo-victory-p (boards)
+(defun bingo-victory-p (board)
   "Check if there is a row or a column with all members marked."
-  (loop :for board :in boards
-        do (let ((row-marked-p (loop :for row :across board
-                                     if (every #'null row)
-                                       do (return t)))
-                 (column-marked-p (loop :for column :below (length (elt board 0))
-                                      if (every #'null (map 'vector #'(lambda (x) (elt x column)) board))
-                                        do (return t))))
-             (when (or row-marked-p column-marked-p)
-               (return t))))
-  )
+  (let ((row-marked-p (loop :for row :across board
+                            if (every #'null row)
+                              do (return t)))
+        (column-marked-p (loop :for column :below (length (elt board 0))
+                               if (every #'null (map 'vector #'(lambda (x) (elt x column)) board))
+                                 do (return t))))
+    (or row-marked-p column-marked-p)))
 
 (defun sum-unmarked-numbers (board)
   (loop :for row :across board
@@ -220,11 +217,16 @@
 "
   (let* ((bingo (load-bingo-from-file "day4-input"))
          (number-sequence (car bingo))
-         (boards (cdr bingo)))
+         (boards (cdr bingo))
+         (victorious (make-array  1 :fill-pointer 0)))
     (block bingo-end
       (loop :for number :in number-sequence do
         (loop :for board :in boards do
           (mark-point board number)
-          (when (bingo-victory-p boards)
-            (return-from bingo-end (list number board (sum-unmarked-numbers board)))))))
-    ))
+          (when (bingo-victory-p board)
+            (setf boards (remove board boards))
+            (vector-push-extend (list board number (sum-unmarked-numbers board))victorious)))
+        (when (every #'bingo-victory-p boards)
+          (return-from bingo-end))))
+    (format t "victorious: ~a~%" victorious))
+    )
