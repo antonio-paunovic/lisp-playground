@@ -233,10 +233,8 @@
       (loop for i from 0
             for line = (read-line file nil nil)
             while line
-            ;; do (format t "~d: ~a~%" i line)
             do (ppcre:register-groups-bind ((#'parse-integer x1 y1 x2 y2))
                    ("(\\d+),(\\d+)\\s->\\s(\\d+),(\\d+)" line)
-;;                 (format t "[~d,~d] [~d,~d]~%" x1 y1 x2 y2) 
                  (when (= x1 x2)
                    (loop :for y :from (min y1 y2) :to (max y1 y2) do
                      (let ((p (make-point :x x1 :y y)))
@@ -250,7 +248,6 @@
                            (setf (gethash p density) (1+ (gethash p density)))
                            (setf (gethash p density) 1)))))
                  (when (= (abs (- x1 x2)) (abs (- y1 y2)));(or (and (= x1 y1) (= x2 y2)) (and (= x1 y2) (= y1 x2)))
-                   (format t "ovo je kurcevi slucaj [~d ~d] [~d ~d]~%" x1 y1 x2 y2)
                    (when (and (<= x1 x2) (<= y1 y2))
                        (loop :for x :from x1 :to x2
                              :for y :from y1 :to y2 do
@@ -280,17 +277,12 @@
                                    (setf (gethash p density) (1+ (gethash p density)))
                                    (setf (gethash p density) 1)))))
                    (when (and (<= x1 x2)(>= y1 y2))
-                     (format t "ovo je kurcevi SLUCAJ ~d ~d~%" x1 y1)
                      (loop :for x :from x1 :to x2
                            :for y :from y1 :downto y2 do
-                             (let ((p (make-point :x x :y y))
-                                   )
+                             (let ((p (make-point :x x :y y)))
                                (if (gethash p density)
                                    (setf (gethash p density) (1+ (gethash p density)))
-                                   (setf (gethash p density) 1))
-                               ))) )
-                 )
-            ))
+                                   (setf (gethash p density) 1)))))))))
     density))
 
 (defun hash-count-max (dict)
@@ -305,4 +297,24 @@
         count (>= v 2)))
 
 (defun day5 ()
-  )
+  (count-overlapping-lines (load-density-of-vents "day5-input")))
+
+(defun day6 (&optional (generation-count 18))
+  (let* ((initial-population (list 3 4 3 1 2))
+         (fish-list (make-array (length initial-population)
+                                :fill-pointer (length initial-population)
+                                :initial-contents initial-population)))
+    (format t "initial ~a~%" fish-list)
+    (loop for day below generation-count do
+      (let ((fishes-to-add 0))
+        (loop for fish across fish-list for i below (length fish-list)
+              if (= 0 fish)
+                do (setf (elt fish-list i) 6) and
+              do (setf fishes-to-add (1+ fishes-to-add))
+              else
+                do (setf (elt fish-list i) (1- fish)))
+        ;; (format t "fisher ~a~%" fish-list)
+        (loop for fish below fishes-to-add
+              do (vector-push-extend 8 fish-list))))
+
+    (format t "finally [~d]~%" (length fish-list))))
