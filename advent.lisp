@@ -207,14 +207,6 @@
                     sum element)))
 
 (defun day4()
-  "
-  load-bingo-from-file
-  list-to-2d-array
-  for number in num-seq
-    find point
-    mark point
-    check-victory-condition
-"
   (let* ((bingo (load-bingo-from-file "day4-input"))
          (number-sequence (car bingo))
          (boards (cdr bingo))
@@ -228,5 +220,89 @@
             (vector-push-extend (list board number (sum-unmarked-numbers board))victorious)))
         (when (every #'bingo-victory-p boards)
           (return-from bingo-end))))
-    (format t "victorious: ~a~%" victorious))
-    )
+    (format t "victorious: ~a~%" victorious)))
+
+
+(ql:quickload "cl-ppcre")
+
+(defstruct point x y)
+
+(defun load-density-of-vents (file-name)
+  (let ((density (make-hash-table :test #'equalp)))
+    (with-open-file (file file-name)
+      (loop for i from 0
+            for line = (read-line file nil nil)
+            while line
+            ;; do (format t "~d: ~a~%" i line)
+            do (ppcre:register-groups-bind ((#'parse-integer x1 y1 x2 y2))
+                   ("(\\d+),(\\d+)\\s->\\s(\\d+),(\\d+)" line)
+;;                 (format t "[~d,~d] [~d,~d]~%" x1 y1 x2 y2) 
+                 (when (= x1 x2)
+                   (loop :for y :from (min y1 y2) :to (max y1 y2) do
+                     (let ((p (make-point :x x1 :y y)))
+                       (if (gethash p density)
+                           (setf (gethash p density) (1+ (gethash p density)))
+                           (setf (gethash p density) 1)))))
+                 (when (= y1 y2)
+                   (loop :for x :from (min x1 x2) :to (max x1 x2) do
+                     (let ((p (make-point :x x :y y1)))
+                       (if (gethash p density)
+                           (setf (gethash p density) (1+ (gethash p density)))
+                           (setf (gethash p density) 1)))))
+                 (when (= (abs (- x1 x2)) (abs (- y1 y2)));(or (and (= x1 y1) (= x2 y2)) (and (= x1 y2) (= y1 x2)))
+                   (format t "ovo je kurcevi slucaj [~d ~d] [~d ~d]~%" x1 y1 x2 y2)
+                   (when (and (<= x1 x2) (<= y1 y2))
+                       (loop :for x :from x1 :to x2
+                             :for y :from y1 :to y2 do
+                               (let ((p (make-point :x x :y y))
+                                     )
+                                 (if (gethash p density)
+                                     (setf (gethash p density) (1+ (gethash p density)))
+                                     (setf (gethash p density) 1))
+                                 ))
+                       )
+                   (when (and (>= x1 x2) (>= y1 y2))
+                     (loop :for x :from x1 :downto x2
+                           :for y :from y1 :downto y2 do
+                             (let ((p (make-point :x x :y y))
+                                   )
+                               (if (gethash p density)
+                                   (setf (gethash p density) (1+ (gethash p density)))
+                                   (setf (gethash p density) 1))
+                               ))
+                     )
+                   (when (and (>= x1 x2)(<= y1 y2))
+                     (loop :for x :from x1 :downto x2
+                           :for y :from y1 :to y2 do
+                             (let ((p (make-point :x x :y y))
+                                   )
+                               (if (gethash p density)
+                                   (setf (gethash p density) (1+ (gethash p density)))
+                                   (setf (gethash p density) 1)))))
+                   (when (and (<= x1 x2)(>= y1 y2))
+                     (format t "ovo je kurcevi SLUCAJ ~d ~d~%" x1 y1)
+                     (loop :for x :from x1 :to x2
+                           :for y :from y1 :downto y2 do
+                             (let ((p (make-point :x x :y y))
+                                   )
+                               (if (gethash p density)
+                                   (setf (gethash p density) (1+ (gethash p density)))
+                                   (setf (gethash p density) 1))
+                               ))) )
+                 )
+            ))
+    density))
+
+(defun hash-count-max (dict)
+  (let ((max-density
+          (loop :for k being the hash-key using (hash-value v) of dict
+                maximize v)))
+    (loop :for k being the hash-key using (hash-value v) of dict
+          count (= v max-density))))
+
+(defun count-overlapping-lines (dict)
+  (loop :for k being the hash-key using (hash-value v) of dict
+        count (>= v 2)))
+
+(defun day5 ()
+  )
